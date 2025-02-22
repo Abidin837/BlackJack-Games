@@ -1,130 +1,142 @@
-let deck, playerHand, dealerHand, balance = 1000, bet = 100;
-const balanceSpan = document.getElementById("balance");
-const betSpan = document.getElementById("bet");
-const dealerCards = document.getElementById("dealer-cards");
-const playerCards = document.getElementById("player-cards");
-const resultDiv = document.getElementById("result");
+// Deklarasi variabel utama
+let deck = [];
+let playerCards = [];
+let dealerCards = [];
+let playerTotal = 0;
+let dealerTotal = 0;
+let isGameOver = false;
 
-document.getElementById("start-game").addEventListener("click", startGame);
-document.getElementById("hit").addEventListener("click", playerHit);
-document.getElementById("stand").addEventListener("click", dealerPlay);
-document.getElementById("restart").addEventListener("click", restartGame);
+// Mengambil elemen dari HTML
+const message = document.getElementById("message");
+const playerCardsDiv = document.getElementById("player-cards");
+const dealerCardsDiv = document.getElementById("dealer-cards");
+const playerTotalSpan = document.getElementById("player-total");
+const dealerTotalSpan = document.getElementById("dealer-total");
 
+const startGameBtn = document.getElementById("start-game");
+const hitBtn = document.getElementById("hit");
+const standBtn = document.getElementById("stand");
+
+// Membuat dek kartu
 function createDeck() {
-    let suits = ["♥", "♦", "♠", "♣"];
-    let values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-    let newDeck = [];
+    const suits = ["♥", "♦", "♣", "♠"];
+    const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    deck = [];
+    
     for (let suit of suits) {
         for (let value of values) {
-            newDeck.push({ value, suit });
+            deck.push({ value, suit });
         }
     }
-    return newDeck.sort(() => Math.random() - 0.5);
+    deck = shuffleDeck(deck);
 }
 
-function startGame() {
-    if (balance < bet) {
-        alert("Saldo tidak cukup untuk bertaruh!");
-        return;
-    }
-    balance -= bet;
-    balanceSpan.textContent = balance;
-    betSpan.textContent = bet;
-
-    deck = createDeck();
-    playerHand = [drawCard(), drawCard()];
-    dealerHand = [drawCard(), drawCard()];
-
-    displayCards(playerCards, playerHand);
-    displayCards(dealerCards, [dealerHand[0], { value: "?", suit: "?" }]);
-
-    document.getElementById("hit").disabled = false;
-    document.getElementById("stand").disabled = false;
-    document.getElementById("start-game").disabled = true;
+// Mengacak urutan kartu
+function shuffleDeck(deck) {
+    return deck.sort(() => Math.random() - 0.5);
 }
 
+// Mengambil kartu dari dek
 function drawCard() {
     return deck.pop();
 }
 
-function displayCards(container, hand) {
-    container.innerHTML = "";
-    for (let card of hand) {
-        let cardDiv = document.createElement("div");
-        cardDiv.classList.add("card");
-        cardDiv.textContent = `${card.value}${card.suit}`;
-        container.appendChild(cardDiv);
-    }
-}
-
-function getHandValue(hand) {
-    let value = 0;
-    let aces = 0;
-    for (let card of hand) {
+// Menghitung nilai total kartu
+function calculateTotal(cards) {
+    let total = 0;
+    let aceCount = 0;
+    
+    for (let card of cards) {
         if (card.value === "A") {
-            aces += 1;
-            value += 11;
+            total += 11;
+            aceCount++;
         } else if (["J", "Q", "K"].includes(card.value)) {
-            value += 10;
+            total += 10;
         } else {
-            value += parseInt(card.value);
+            total += parseInt(card.value);
         }
     }
-    while (value > 21 && aces > 0) {
-        value -= 10;
-        aces -= 1;
+
+    while (total > 21 && aceCount > 0) {
+        total -= 10;
+        aceCount--;
     }
-    return value;
+
+    return total;
 }
 
-function playerHit() {
-    playerHand.push(drawCard());
-    displayCards(playerCards, playerHand);
+// Memulai permainan
+function startGame() {
+    isGameOver = false;
+    createDeck();
+
+    playerCards = [drawCard(), drawCard()];
+    dealerCards = [drawCard(), drawCard()];
     
-    if (getHandValue(playerHand) > 21) {
-        endGame("Kamu kalah! Kartu kamu lebih dari 21.");
+    updateGameState();
+    message.textContent = "Ambil kartu atau tahan!";
+    
+    hitBtn.disabled = false;
+    standBtn.disabled = false;
+    startGameBtn.disabled = true;
+}
+
+// Memperbarui tampilan kartu dan skor
+function updateGameState() {
+    playerTotal = calculateTotal(playerCards);
+    dealerTotal = calculateTotal(dealerCards);
+
+    playerCardsDiv.innerHTML = playerCards.map(card => `<span>${card.value}${card.suit}</span>`).join(" ");
+    dealerCardsDiv.innerHTML = dealerCards.map(card => `<span>${card.value}${card.suit}</span>`).join(" ");
+    
+    playerTotalSpan.textContent = playerTotal;
+    dealerTotalSpan.textContent = isGameOver ? dealerTotal : "?";
+
+    if (playerTotal > 21) {
+        endGame("Anda kalah! Skor melebihi 21.");
     }
 }
 
-function dealerPlay() {
-    document.getElementById("hit").disabled = true;
-    document.getElementById("stand").disabled = true;
-
-    displayCards(dealerCards, dealerHand);
+// Pemain mengambil kartu
+function hit() {
+    if (isGameOver) return;
     
-    while (getHandValue(dealerHand) < 17) {
-        dealerHand.push(drawCard());
-        displayCards(dealerCards, dealerHand);
+    playerCards.push(drawCard());
+    updateGameState();
+}
+
+// Pemain memilih tahan
+function stand() {
+    if (isGameOver) return;
+    
+    while (dealerTotal < 17) {
+        dealerCards.push(drawCard());
+        dealerTotal = calculateTotal(dealerCards);
     }
-
-    let playerScore = getHandValue(playerHand);
-    let dealerScore = getHandValue(dealerHand);
-
-    if (dealerScore > 21 || playerScore > dealerScore) {
-        endGame("Selamat! Kamu menang!", true);
-    } else if (playerScore < dealerScore) {
-        endGame("Kamu kalah! Dealer menang.");
+    
+    isGameOver = true;
+    updateGameState();
+    
+    if (dealerTotal > 21 || playerTotal > dealerTotal) {
+        endGame("Selamat, Anda menang!");
+    } else if (playerTotal < dealerTotal) {
+        endGame("Anda kalah! Dealer menang.");
     } else {
         endGame("Seri! Tidak ada pemenang.");
-        balance += bet;
     }
 }
 
-function endGame(message, win = false) {
-    resultDiv.textContent = message;
-    if (win) balance += bet * 2;
-    balanceSpan.textContent = balance;
-    document.getElementById("start-game").disabled = false;
+// Menentukan hasil permainan
+function endGame(result) {
+    message.textContent = result;
+    dealerTotalSpan.textContent = dealerTotal;
+    
+    hitBtn.disabled = true;
+    standBtn.disabled = true;
+    startGameBtn.disabled = false;
 }
 
-function restartGame() {
-    balance = 1000;
-    balanceSpan.textContent = balance;
-    betSpan.textContent = bet;
-    resultDiv.textContent = "";
-    playerCards.innerHTML = "";
-    dealerCards.innerHTML = "";
-    document.getElementById("start-game").disabled = false;
-    document.getElementById("hit").disabled = true;
-    document.getElementById("stand").disabled = true;
-}
+// Event listeners untuk tombol
+startGameBtn.addEventListener("click", startGame);
+hitBtn.addEventListener("click", hit);
+standBtn.addEventListener("click", stand);
