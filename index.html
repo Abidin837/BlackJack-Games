@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,31 +7,26 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Blackjack 2D</h1>
     <div class="game-container">
-        <div id="dealer">
-            <h2>Dealer</h2>
+        <h1>Blackjack</h1>
+        <div class="game-info">
+            <p>Saldo: <span id="balance">1000</span></p>
+            <p>Taruhan: <span id="bet">0</span></p>
+        </div>
+        <div class="buttons">
+            <button id="start-game">Mulai Permainan</button>
+            <button id="hit" disabled>Hit</button>
+            <button id="stand" disabled>Stand</button>
+            <button id="restart">Restart</button>
+        </div>
+        <div class="cards">
+            <h2>Dealer:</h2>
             <div id="dealer-cards" class="card-container"></div>
-            <p id="dealer-score">Score: 0</p>
-        </div>
-
-        <div id="player">
-            <h2>Player</h2>
+            <h2>Pemain:</h2>
             <div id="player-cards" class="card-container"></div>
-            <p id="player-score">Score: 0</p>
         </div>
+        <div id="result"></div>
     </div>
-
-    <div class="controls">
-        <button id="hit">Hit</button>
-        <button id="stand">Stand</button>
-        <button id="restart">Restart</button>
-    </div>
-
-    <p id="result"></p>
-
     <script src="script.js"></script>
 </body>
 </html>
-<link rel="stylesheet" href="Gaya.css">
-<script src="skrip.js" defer></script>
