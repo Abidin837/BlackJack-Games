@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Jack Online</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        button { margin: 5px; padding: 10px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Game Black Jack Online</h1>
+    <button onclick="startGame()">Mulai Game</button>
+    <button onclick="hit()">Hit (Ambil Kartu)</button>
+    <button onclick="stand()">Stand (Berhenti)</button>
+
+    <h2>Kartu Kamu:</h2>
+    <p id="player-hand">Belum ada kartu</p>
+    <h2>Skor:</h2>
+    <p id="score">0</p>
+
+    <script>
+        let deck = [];
+        let playerHand = []; 
+
+        function createDeck() {
+            let suits = ["♠", "♥", "♦", "♣"];
+            let values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+            let deck = [];
+            for (let suit of suits) {
+                for (let value of values) {
+                    deck.push({ value, suit });
+                }
+            }
+            return deck.sort(() => Math.random() - 0.5);
+        }
+
+        function startGame() {
+            deck = createDeck();
+            playerHand = [drawCard(), drawCard()];
+            updateUI();
+        }
+
+        function drawCard() {
+            return deck.pop();
+        }
+
+        function calculateScore(hand) {
+            let score = 0;
+            let aceCount = 0;
+
+            hand.forEach(card => {
+                if (["J", "Q", "K"].includes(card.value)) {
+                    score += 10;
+                } else if (card.value === "A") {
+                    aceCount++;
+                    score += 11;
+                } else {
+                    score += parseInt(card.value);
+                }
+            });
+
+            while (score > 21 && aceCount > 0) {
+                score -= 10;
+                aceCount--;
+            }
+
+            return score;
+        }
+
+        function updateUI() {
+            document.getElementById("player-hand").innerText = playerHand.map(c => `${c.value}${c.suit}`).join(", ");
+            document.getElementById("score").innerText = calculateScore(playerHand);
+        }
+
+        function hit() {
+            playerHand.push(drawCard());
+            updateUI();
+        }
+
+        function stand() {
+            alert("Kamu memilih stand. Skor akhir: " + calculateScore(playerHand));
+        }
+    </script>
+</body>
+  </html>
