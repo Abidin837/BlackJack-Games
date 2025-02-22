@@ -3,34 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tebak Angka</title>
+    <title>Super Mario Sederhana</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: skyblue;
+        }
+        canvas {
+            display: block;
+            background: url('https://i.imgur.com/7yUvePI.png') repeat-x;
+            background-size: cover;
+        }
+    </style>
 </head>
-<body style="text-align: center; font-family: Arial, sans-serif;">
-
-    <h1>Game Tebak Angka</h1>
-    <p>Tebak angka antara 1 sampai 10:</p>
-    
-    <input type="number" id="tebakan" min="1" max="10">
-    <button onclick="cekTebakan()">Coba</button>
-
-    <p id="hasil"></p>
+<body>
+    <canvas id="gameCanvas"></canvas>
 
     <script>
-        let angkaBenar = Math.floor(Math.random() * 10) + 1;
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-        function cekTebakan() {
-            let tebakan = document.getElementById("tebakan").value;
-            let hasil = document.getElementById("hasil");
+        // Ukuran canvas
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-            if (tebakan == angkaBenar) {
-                hasil.innerHTML = "Selamat! Kamu benar!";
-                hasil.style.color = "green";
-            } else {
-                hasil.innerHTML = "Salah! Coba lagi kontol.";
-                hasil.style.color = "red";
+        // Karakter Mario
+        const mario = {
+            x: 50,
+            y: canvas.height - 100,
+            width: 50,
+            height: 50,
+            speed: 5,
+            dy: 0,
+            gravity: 0.5,
+            jumpPower: -10,
+            isJumping: false
+        };
+
+        // Kontrol keyboard
+        const keys = {
+            ArrowLeft: false,
+            ArrowRight: false,
+            Space: false
+        };
+
+        // Event listener untuk tombol keyboard
+        window.addEventListener("keydown", (e) => {
+            if (e.code in keys) keys[e.code] = true;
+        });
+
+        window.addEventListener("keyup", (e) => {
+            if (e.code in keys) keys[e.code] = false;
+        });
+
+        // Update posisi Mario
+        function update() {
+            if (keys.ArrowLeft) mario.x -= mario.speed;
+            if (keys.ArrowRight) mario.x += mario.speed;
+
+            // Lompatan Mario
+            if (keys.Space && !mario.isJumping) {
+                mario.dy = mario.jumpPower;
+                mario.isJumping = true;
+            }
+
+            // Efek gravitasi
+            mario.dy += mario.gravity;
+            mario.y += mario.dy;
+
+            // Cegah jatuh ke bawah
+            if (mario.y >= canvas.height - 100) {
+                mario.y = canvas.height - 100;
+                mario.dy = 0;
+                mario.isJumping = false;
             }
         }
-    </script>
 
+        // Gambar Mario
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Gambar tanah
+            ctx.fillStyle = "green";
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+            // Gambar Mario
+            ctx.fillStyle = "red";
+            ctx.fillRect(mario.x, mario.y, mario.width, mario.height);
+        }
+
+        // Loop game
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
 </body>
 </html>
