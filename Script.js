@@ -1,138 +1,130 @@
-let deck = [];
-let dealerCards = [];
-let playerCards = [];
-let dealerScore = 0;
-let playerScore = 0;
+let deck, playerHand, dealerHand, balance = 1000, bet = 100;
+const balanceSpan = document.getElementById("balance");
+const betSpan = document.getElementById("bet");
+const dealerCards = document.getElementById("dealer-cards");
+const playerCards = document.getElementById("player-cards");
+const resultDiv = document.getElementById("result");
 
-const dealerCardsDiv = document.getElementById("dealer-cards");
-const playerCardsDiv = document.getElementById("player-cards");
-const dealerScoreText = document.getElementById("dealer-score");
-const playerScoreText = document.getElementById("player-score");
-const resultText = document.getElementById("result");
-
-document.getElementById("hit").addEventListener("click", hit);
-document.getElementById("stand").addEventListener("click", stand);
-document.getElementById("restart").addEventListener("click", startGame);
+document.getElementById("start-game").addEventListener("click", startGame);
+document.getElementById("hit").addEventListener("click", playerHit);
+document.getElementById("stand").addEventListener("click", dealerPlay);
+document.getElementById("restart").addEventListener("click", restartGame);
 
 function createDeck() {
-    const suits = ["♠", "♣", "♦", "♥"];
-    const values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
-    deck = [];
-
+    let suits = ["♥", "♦", "♠", "♣"];
+    let values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    let newDeck = [];
     for (let suit of suits) {
         for (let value of values) {
-            deck.push({ suit, value });
+            newDeck.push({ value, suit });
         }
     }
-    
-    deck = deck.sort(() => Math.random() - 0.5); // Shuffle deck
-}
-
-function calculateScore(cards) {
-    let score = 0;
-    let aces = 0;
-
-    for (let card of cards) {
-        if (["J", "Q", "K"].includes(card.value)) {
-            score += 10;
-        } else if (card.value === "A") {
-            score += 11;
-            aces += 1;
-        } else {
-            score += parseInt(card.value);
-        }
-    }
-
-    while (score > 21 && aces > 0) {
-        score -= 10;
-        aces -= 1;
-    }
-
-    return score;
-}
-
-function dealCard(player) {
-    const card = deck.pop();
-    player.push(card);
-}
-
-function renderCards() {
-    dealerCardsDiv.innerHTML = "";
-    playerCardsDiv.innerHTML = "";
-
-    dealerCards.forEach((card, index) => {
-        let cardDiv = document.createElement("div");
-        cardDiv.classList.add("card");
-        cardDiv.innerText = index === 0 ? "🂠" : `${card.value} ${card.suit}`;
-        dealerCardsDiv.appendChild(cardDiv);
-    });
-
-    playerCards.forEach(card => {
-        let cardDiv = document.createElement("div");
-        cardDiv.classList.add("card");
-        cardDiv.innerText = `${card.value} ${card.suit}`;
-        playerCardsDiv.appendChild(cardDiv);
-    });
-
-    dealerScoreText.innerText = `Score: ${dealerScore}`;
-    playerScoreText.innerText = `Score: ${playerScore}`;
-}
-
-function hit() {
-    dealCard(playerCards);
-    playerScore = calculateScore(playerCards);
-    renderCards();
-
-    if (playerScore > 21) {
-        resultText.innerText = "You Busted! Dealer Wins!";
-        disableButtons();
-    }
-}
-
-function stand() {
-    while (dealerScore < 17) {
-        dealCard(dealerCards);
-        dealerScore = calculateScore(dealerCards);
-    }
-
-    renderCards();
-    checkWinner();
-}
-
-function checkWinner() {
-    if (dealerScore > 21 || playerScore > dealerScore) {
-        resultText.innerText = "You Win!";
-    } else if (dealerScore > playerScore) {
-        resultText.innerText = "Dealer Wins!";
-    } else {
-        resultText.innerText = "It's a Tie!";
-    }
-    disableButtons();
-}
-
-function disableButtons() {
-    document.getElementById("hit").disabled = true;
-    document.getElementById("stand").disabled = true;
+    return newDeck.sort(() => Math.random() - 0.5);
 }
 
 function startGame() {
-    createDeck();
-    dealerCards = [];
-    playerCards = [];
+    if (balance < bet) {
+        alert("Saldo tidak cukup untuk bertaruh!");
+        return;
+    }
+    balance -= bet;
+    balanceSpan.textContent = balance;
+    betSpan.textContent = bet;
 
-    dealCard(playerCards);
-    dealCard(playerCards);
-    dealCard(dealerCards);
-    dealCard(dealerCards);
+    deck = createDeck();
+    playerHand = [drawCard(), drawCard()];
+    dealerHand = [drawCard(), drawCard()];
 
-    dealerScore = calculateScore(dealerCards);
-    playerScore = calculateScore(playerCards);
+    displayCards(playerCards, playerHand);
+    displayCards(dealerCards, [dealerHand[0], { value: "?", suit: "?" }]);
 
     document.getElementById("hit").disabled = false;
     document.getElementById("stand").disabled = false;
-    resultText.innerText = "";
-
-    renderCards();
+    document.getElementById("start-game").disabled = true;
 }
 
-startGame();
+function drawCard() {
+    return deck.pop();
+}
+
+function displayCards(container, hand) {
+    container.innerHTML = "";
+    for (let card of hand) {
+        let cardDiv = document.createElement("div");
+        cardDiv.classList.add("card");
+        cardDiv.textContent = `${card.value}${card.suit}`;
+        container.appendChild(cardDiv);
+    }
+}
+
+function getHandValue(hand) {
+    let value = 0;
+    let aces = 0;
+    for (let card of hand) {
+        if (card.value === "A") {
+            aces += 1;
+            value += 11;
+        } else if (["J", "Q", "K"].includes(card.value)) {
+            value += 10;
+        } else {
+            value += parseInt(card.value);
+        }
+    }
+    while (value > 21 && aces > 0) {
+        value -= 10;
+        aces -= 1;
+    }
+    return value;
+}
+
+function playerHit() {
+    playerHand.push(drawCard());
+    displayCards(playerCards, playerHand);
+    
+    if (getHandValue(playerHand) > 21) {
+        endGame("Kamu kalah! Kartu kamu lebih dari 21.");
+    }
+}
+
+function dealerPlay() {
+    document.getElementById("hit").disabled = true;
+    document.getElementById("stand").disabled = true;
+
+    displayCards(dealerCards, dealerHand);
+    
+    while (getHandValue(dealerHand) < 17) {
+        dealerHand.push(drawCard());
+        displayCards(dealerCards, dealerHand);
+    }
+
+    let playerScore = getHandValue(playerHand);
+    let dealerScore = getHandValue(dealerHand);
+
+    if (dealerScore > 21 || playerScore > dealerScore) {
+        endGame("Selamat! Kamu menang!", true);
+    } else if (playerScore < dealerScore) {
+        endGame("Kamu kalah! Dealer menang.");
+    } else {
+        endGame("Seri! Tidak ada pemenang.");
+        balance += bet;
+    }
+}
+
+function endGame(message, win = false) {
+    resultDiv.textContent = message;
+    if (win) balance += bet * 2;
+    balanceSpan.textContent = balance;
+    document.getElementById("start-game").disabled = false;
+}
+
+function restartGame() {
+    balance = 1000;
+    balanceSpan.textContent = balance;
+    betSpan.textContent = bet;
+    resultDiv.textContent = "";
+    playerCards.innerHTML = "";
+    dealerCards.innerHTML = "";
+    document.getElementById("start-game").disabled = false;
+    document.getElementById("hit").disabled = true;
+    document.getElementById("stand").disabled = true;
+}
